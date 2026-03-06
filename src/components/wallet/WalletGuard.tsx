@@ -13,12 +13,7 @@ interface WalletGuardProps {
 export function WalletGuard({ children }: WalletGuardProps) {
   const { status } = useAccount();
   const isDemoMode = useDemoStore((s) => s.isDemoMode);
-
-  // Demo mode bypasses all wallet checks
-  if (isDemoMode) return <>{children}</>;
   const router = useRouter();
-  // mounted prevents redirect during the brief window between
-  // ClientProviders mounting and wagmi completing its reconnection check.
   const [mounted, setMounted] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
 
@@ -27,12 +22,14 @@ export function WalletGuard({ children }: WalletGuardProps) {
   }, []);
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (mounted && status === "disconnected") {
       router.replace("/connect");
     }
-  }, [mounted, status, router]);
+  }, [mounted, status, isDemoMode, router]);
 
   useEffect(() => {
+    if (isDemoMode) return;
     if (!mounted || (status !== "connecting" && status !== "reconnecting")) {
       setTimedOut(false);
       return;
@@ -41,16 +38,19 @@ export function WalletGuard({ children }: WalletGuardProps) {
     const timeout = window.setTimeout(() => {
       setTimedOut(true);
       router.replace("/connect");
-    }, 6000);
+    }, 8000);
 
     return () => window.clearTimeout(timeout);
-  }, [mounted, status, router]);
+  }, [mounted, status, isDemoMode, router]);
+
+  // Demo mode bypasses all wallet checks
+  if (isDemoMode) return <>{children}</>;
 
   // Show spinner until mounted + not in a transitional state
   if (!mounted || ((status === "connecting" || status === "reconnecting") && !timedOut)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-white/60">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+        <div className="flex flex-col items-center gap-4 text-[#64748B]">
           <LoadingDots size="md" />
           <span className="text-sm">
             {status === "reconnecting" ? "Restoring wallet session..." : "Connecting wallet..."}

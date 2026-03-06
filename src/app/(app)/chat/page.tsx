@@ -73,13 +73,12 @@ export default function ChatPage() {
       </div>
 
       {/* ── Messages ────────────────────────────────────────────────────── */}
-      <ChatThread messages={messages} isLoading={isLoading} />
+      <ChatThread messages={messages} isLoading={isLoading} onSend={sendMessage} />
 
       {/* ── Input ──────────────────────────────────────────────────────── */}
       <ChatInput
         onSend={sendMessage}
         isLoading={isLoading}
-        disabled={!address}
       />
     </div>
   );

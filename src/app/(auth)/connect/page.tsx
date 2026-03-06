@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
 import { WaveBackground } from "@/components/ui/WaveBackground";
-import { ConnectButton } from "@/components/wallet/ConnectButton";
+import { ConnectButton as RainbowConnectButton } from "@rainbow-me/rainbowkit";
 import { useDemoStore } from "@/store/demoStore";
 
 const FEATURES = [
@@ -50,15 +50,21 @@ const FEATURES = [
 const TRUST_BADGES = ["USCIS Guidelines", "EU Home Office", "Nigerian Immigration", "UNHCR Standards"];
 
 export default function ConnectPage() {
-  const { address, status } = useAccount();
+  const { address, status, isConnected } = useAccount();
   const router = useRouter();
   const { isDemoMode, enableDemo } = useDemoStore();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isDemoMode || (status === "connected" && address)) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isDemoMode || isConnected) {
       router.replace("/");
     }
-  }, [address, status, isDemoMode, router]);
+  }, [mounted, isConnected, isDemoMode, router]);
 
   return (
     <div className="min-h-screen flex bg-[#F8FAFC] relative overflow-hidden">
@@ -181,7 +187,9 @@ export default function ConnectPage() {
 
           {/* Connect wallet */}
           <div className="space-y-3">
-            <ConnectButton />
+            <div className="flex justify-center">
+              <RainbowConnectButton showBalance={false} chainStatus="icon" />
+            </div>
 
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-[#E2E8F0]" />

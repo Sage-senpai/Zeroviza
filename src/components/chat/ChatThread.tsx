@@ -9,6 +9,7 @@ import type { ChatMessage } from "@/types/chat";
 interface ChatThreadProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  onSend?: (message: string) => void;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -18,7 +19,7 @@ const SUGGESTED_QUESTIONS = [
   { icon: "💼", text: "Work permit documents checklist" },
 ];
 
-export function ChatThread({ messages, isLoading }: ChatThreadProps) {
+export function ChatThread({ messages, isLoading, onSend }: ChatThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function ChatThread({ messages, isLoading }: ChatThreadProps) {
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.45 + i * 0.05 }}
+              onClick={() => onSend?.(q.text)}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-white border border-[#E2E8F0] text-left hover:border-[#DC2626] hover:bg-[#FEF2F2] transition-all group"
             >
               <span className="text-xl">{q.icon}</span>

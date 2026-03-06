@@ -6,6 +6,10 @@ import {
   okxWallet,
   phantomWallet,
   subWallet,
+  trustWallet,
+  coinbaseWallet,
+  braveWallet,
+  rabbyWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 
@@ -21,12 +25,21 @@ const hasWalletConnectProjectId = walletConnectProjectId.length > 0;
 
 const walletGroups = [
   {
-    groupName: "Recommended",
+    groupName: "Popular",
     wallets: [
       metaMaskWallet,
       okxWallet,
-      subWallet,
       phantomWallet,
+      trustWallet,
+      coinbaseWallet,
+      braveWallet,
+    ],
+  },
+  {
+    groupName: "More",
+    wallets: [
+      rabbyWallet,
+      subWallet,
       ...(hasWalletConnectProjectId ? [walletConnectWallet] : []),
       injectedWallet,
     ],
