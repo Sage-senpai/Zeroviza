@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
   }
 
-  const lawyer = getLawyerByWallet(wallet);
+  const lawyer = await getLawyerByWallet(wallet);
   if (!lawyer) {
     return NextResponse.json({ status: null });
   }

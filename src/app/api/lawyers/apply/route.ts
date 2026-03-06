@@ -5,7 +5,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
 import { upsertLawyerApplication, getLawyerByWallet } from "@/lib/db/client";
 import type { LawyerApplication } from "@/types/lawyer";
 
@@ -40,13 +39,13 @@ export async function POST(req: NextRequest) {
   if (!bio?.trim()) return NextResponse.json({ error: "Bio is required" }, { status: 400 });
 
   // Check if already verified — don't allow re-application
-  const existing = getLawyerByWallet(walletAddress);
+  const existing = await getLawyerByWallet(walletAddress);
   if (existing?.status === "verified") {
     return NextResponse.json({ error: "This wallet is already a verified lawyer" }, { status: 409 });
   }
 
-  const id = existing?.id ?? nanoid();
-  upsertLawyerApplication({
+  const id = walletAddress; // wallet is the canonical ID
+  await upsertLawyerApplication({
     id,
     walletAddress,
     fullName: fullName.trim(),

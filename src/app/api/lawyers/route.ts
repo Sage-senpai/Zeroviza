@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
     if (!ADMIN_SECRET || secret !== ADMIN_SECRET) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const lawyers = getAllLawyerApplications();
+    const lawyers = await getAllLawyerApplications();
     return NextResponse.json({ lawyers });
   }
 
-  const lawyers = getVerifiedLawyers();
+  const lawyers = await getVerifiedLawyers();
   return NextResponse.json({ lawyers });
 }

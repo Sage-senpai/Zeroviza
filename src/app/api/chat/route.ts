@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const { message, walletAddress } = parsed.data;
 
     // 1. Load existing history and profile from 0G Storage
-    const index = getStorageIndex(walletAddress);
+    const index = await getStorageIndex(walletAddress);
 
     let history: ChatMessage[] = [];
     if (index?.historyRootHash) {
@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
       uploadProfile(updatedProfile),
     ]);
 
-    // 6. Update SQLite index
-    upsertStorageIndex(
+    // 6. Update on-chain index
+    await upsertStorageIndex(
       walletAddress,
       historyResult.rootHash,
       profileResult.rootHash

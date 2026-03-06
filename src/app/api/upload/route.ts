@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     // Upload to 0G decentralized storage
     const { rootHash } = await uploadToStorage(buffer);
 
-    // Persist metadata in SQLite
+    // Persist metadata on-chain + 0G Storage
     const doc: UserDocument = {
       id: nanoid(),
       walletAddress,
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       verified: true, // 0G upload succeeded → hash verified
     };
 
-    insertDocument(doc);
+    await insertDocument(doc);
 
     return NextResponse.json({ document: doc }, { status: 201 });
   } catch (err) {

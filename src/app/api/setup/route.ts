@@ -83,7 +83,8 @@ export async function POST(req: NextRequest) {
   // acknowledgeProviderSigner requires at least 1.0 0G in the ledger.
   const TARGET_BALANCE = 1.0;
   try {
-    const { createZGComputeNetworkBroker } = await import("@0glabs/0g-serving-broker");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { createZGComputeNetworkBroker } = require("@0glabs/0g-serving-broker") as typeof import("@0glabs/0g-serving-broker");
     const wallet = getWallet() as unknown as Parameters<typeof createZGComputeNetworkBroker>[0];
     const broker = await createZGComputeNetworkBroker(wallet);
 

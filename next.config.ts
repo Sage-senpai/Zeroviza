@@ -8,10 +8,9 @@ const nextConfig: NextConfig = {
   // Skip ESLint during builds — run `pnpm lint` locally instead
   eslint: { ignoreDuringBuilds: true },
 
-  // Mark server-only native packages so Next.js doesn't bundle them.
-  // Vercel's file tracer picks up better-sqlite3 automatically via serverExternalPackages.
+  // Mark server-only packages so Next.js doesn't bundle them.
   serverExternalPackages: [
-    "better-sqlite3",
+    "ethers",
     "@0glabs/0g-ts-sdk",
     "@0glabs/0g-serving-broker",
   ],

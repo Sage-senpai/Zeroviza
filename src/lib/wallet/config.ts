@@ -1,4 +1,4 @@
-import { defineChain, http } from "viem";
+import { http } from "viem";
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import {
   injectedWallet,
@@ -9,22 +9,9 @@ import {
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 
-// ─── 0G Galileo Testnet chain definition ─────────────────────────────────────
-export const ogGalileoTestnet = defineChain({
-  id: 16602,
-  name: "0G-Galileo-Testnet",
-  nativeCurrency: { name: "0G", symbol: "0G", decimals: 18 },
-  rpcUrls: {
-    default: { http: ["https://evmrpc-testnet.0g.ai"] },
-  },
-  blockExplorers: {
-    default: {
-      name: "0G Scan",
-      url: "https://chainscan-galileo.0g.ai",
-    },
-  },
-  testnet: true,
-});
+// Re-export from chains.ts so other files can import ogGalileoTestnet from here
+export { ogGalileoTestnet } from "./chains";
+import { ogGalileoTestnet } from "./chains";
 
 // ─── Wagmi + RainbowKit config ────────────────────────────────────────────────
 const walletConnectProjectId = (

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { wallet } = parsed.data;
-    const index = getStorageIndex(wallet);
+    const index = await getStorageIndex(wallet);
 
     let profile;
     if (index?.profileRootHash) {
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { wallet } = parsed.data;
-    const index = getStorageIndex(wallet);
+    const index = await getStorageIndex(wallet);
 
     let profile;
     if (index?.profileRootHash) {
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
     const updatedProfile = { ...profile };
 
     const result = await uploadProfile(updatedProfile);
-    upsertStorageIndex(wallet, index?.historyRootHash ?? null, result.rootHash);
+    await upsertStorageIndex(wallet, index?.historyRootHash ?? null, result.rootHash);
 
     return NextResponse.json({ profile: updatedProfile });
   } catch (err) {

@@ -1,225 +1,218 @@
-import path from "path";
-import fs from "fs";
-import type Database from "better-sqlite3";
-import { SCHEMA_SQL, type StorageIndexRow, type DocumentRow, type LawyerRow } from "./schema";
+/**
+ * Data access layer — backed by 0G Storage + smart contracts (no SQLite).
+ *
+ * - StorageIndex contract: wallet → {historyRoot, profileRoot, documentsRoot}
+ * - LawyerRegistry contract: wallet → status + metadataURI (0G root hash of profile JSON)
+ * - 0G Storage: actual data (chat history, profiles, document metadata, lawyer metadata)
+ *
+ * All functions are async (contract reads + 0G downloads).
+ */
+
 import type { StorageIndex, UserDocument } from "@/types/storage";
 import type { Lawyer, LawyerApplication } from "@/types/lawyer";
+import {
+  getRoots,
+  updateRoots,
+} from "@/lib/contracts/StorageIndex";
+import {
+  readOnChainRecord,
+  getVerifiedAddresses,
+  getAllApplicantAddresses,
+  serverApplyOnBehalf,
+  serverVerifyLawyer as contractVerifyLawyer,
+  serverRejectLawyer as contractRejectLawyer,
+  LawyerStatus,
+} from "@/lib/contracts/LawyerRegistry";
+import {
+  uploadToStorage,
+  downloadFromStorage,
+} from "@/lib/0g/storage";
 
-// ─── Lazy singleton ───────────────────────────────────────────────────────────
-let _db: Database.Database | null = null;
+// ─── Storage Index (contract reads/writes) ──────────────────────────────────
 
-function getDb(): Database.Database {
-  if (_db) return _db;
+export async function getStorageIndex(walletAddress: string): Promise<StorageIndex | null> {
+  const roots = await getRoots(walletAddress);
 
-  // On Vercel (and other serverless platforms), only /tmp is writable.
-  // Locally, default to ./data/abobi.db relative to cwd.
-  const defaultPath = process.env.VERCEL ? "/tmp/abobi.db" : "./data/abobi.db";
-  const dbPath = process.env.DATABASE_PATH ?? defaultPath;
-  const absPath = dbPath.startsWith("/") ? dbPath : path.resolve(process.cwd(), dbPath);
+  // All empty = no data stored yet
+  if (!roots.historyRoot && !roots.profileRoot && !roots.documentsRoot) {
+    return null;
+  }
 
-  // Ensure directory exists
-  fs.mkdirSync(path.dirname(absPath), { recursive: true });
-
-  // Dynamic require avoids Next.js bundling the native module
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const BetterSqlite3 = require("better-sqlite3") as typeof Database;
-  _db = new BetterSqlite3(absPath);
-
-  // WAL mode for better concurrent read performance
-  _db.pragma("journal_mode = WAL");
-  _db.pragma("foreign_keys = ON");
-
-  // Run migrations
-  _db.exec(SCHEMA_SQL);
-
-  return _db;
-}
-
-// ─── Row → domain type mapper ─────────────────────────────────────────────────
-function rowToIndex(row: StorageIndexRow): StorageIndex {
   return {
-    walletAddress: row.wallet_address,
-    historyRootHash: row.history_root_hash,
-    profileRootHash: row.profile_root_hash,
-    updatedAt: row.updated_at,
+    walletAddress,
+    historyRootHash: roots.historyRoot || null,
+    profileRootHash: roots.profileRoot || null,
+    updatedAt: Date.now(),
   };
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
-export function getStorageIndex(walletAddress: string): StorageIndex | null {
-  const db = getDb();
-  const row = db
-    .prepare("SELECT * FROM storage_index WHERE wallet_address = ?")
-    .get(walletAddress) as StorageIndexRow | undefined;
-  return row ? rowToIndex(row) : null;
-}
-
-export function upsertStorageIndex(
+export async function upsertStorageIndex(
   walletAddress: string,
   historyRootHash: string | null,
-  profileRootHash: string | null
-): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT INTO storage_index (wallet_address, history_root_hash, profile_root_hash, updated_at)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(wallet_address) DO UPDATE SET
-       history_root_hash = excluded.history_root_hash,
-       profile_root_hash = excluded.profile_root_hash,
-       updated_at        = excluded.updated_at`
-  ).run(walletAddress, historyRootHash, profileRootHash, Date.now());
-}
-
-// ─── Document helpers ─────────────────────────────────────────────────────────
-function rowToDocument(row: DocumentRow): UserDocument {
-  return {
-    id: row.id,
-    walletAddress: row.wallet_address,
-    name: row.name,
-    size: row.size,
-    mimeType: row.mime_type,
-    rootHash: row.root_hash,
-    uploadedAt: row.uploaded_at,
-    verified: row.verified === 1,
-  };
-}
-
-export function insertDocument(doc: UserDocument): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT OR IGNORE INTO documents
-       (id, wallet_address, name, size, mime_type, root_hash, uploaded_at, verified)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    doc.id,
-    doc.walletAddress,
-    doc.name,
-    doc.size,
-    doc.mimeType,
-    doc.rootHash,
-    doc.uploadedAt,
-    doc.verified ? 1 : 0
+  profileRootHash: string | null,
+): Promise<void> {
+  await updateRoots(
+    walletAddress,
+    historyRootHash ?? "",
+    profileRootHash ?? "",
+    "", // leave documentsRoot unchanged
   );
 }
 
-export function getDocuments(walletAddress: string): UserDocument[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT * FROM documents WHERE wallet_address = ? ORDER BY uploaded_at DESC")
-    .all(walletAddress) as DocumentRow[];
-  return rows.map(rowToDocument);
+// ─── Document helpers (0G Storage + contract) ───────────────────────────────
+
+/**
+ * Download the documents list JSON from 0G. Returns [] if no data yet.
+ */
+async function loadDocumentsList(walletAddress: string): Promise<UserDocument[]> {
+  const roots = await getRoots(walletAddress);
+  if (!roots.documentsRoot) return [];
+
+  try {
+    const buf = await downloadFromStorage(roots.documentsRoot);
+    return JSON.parse(buf.toString("utf-8")) as UserDocument[];
+  } catch {
+    return [];
+  }
 }
 
-export function deleteDocument(id: string, walletAddress: string): boolean {
-  const db = getDb();
-  const result = db
-    .prepare("DELETE FROM documents WHERE id = ? AND wallet_address = ?")
-    .run(id, walletAddress);
-  return (result.changes ?? 0) > 0;
+/**
+ * Upload the documents list JSON and update the contract.
+ */
+async function saveDocumentsList(walletAddress: string, docs: UserDocument[]): Promise<void> {
+  const json = JSON.stringify(docs);
+  const { rootHash } = await uploadToStorage(Buffer.from(json, "utf-8"));
+
+  await updateRoots(walletAddress, "", "", rootHash);
 }
 
-// ─── Lawyer helpers ───────────────────────────────────────────────────────────
-function rowToLawyer(row: LawyerRow): Lawyer {
+export async function insertDocument(doc: UserDocument): Promise<void> {
+  const docs = await loadDocumentsList(doc.walletAddress);
+  docs.push(doc);
+  await saveDocumentsList(doc.walletAddress, docs);
+}
+
+export async function getDocuments(walletAddress: string): Promise<UserDocument[]> {
+  const docs = await loadDocumentsList(walletAddress);
+  return docs.sort((a, b) => b.uploadedAt - a.uploadedAt);
+}
+
+export async function deleteDocument(id: string, walletAddress: string): Promise<boolean> {
+  const docs = await loadDocumentsList(walletAddress);
+  const idx = docs.findIndex((d) => d.id === id && d.walletAddress === walletAddress);
+  if (idx === -1) return false;
+
+  docs.splice(idx, 1);
+  await saveDocumentsList(walletAddress, docs);
+  return true;
+}
+
+// ─── Lawyer helpers (LawyerRegistry contract + 0G Storage) ──────────────────
+
+/**
+ * Download lawyer profile metadata from 0G Storage using the contract's metadataURI.
+ */
+async function loadLawyerMetadata(metadataURI: string): Promise<LawyerApplication | null> {
+  if (!metadataURI) return null;
+  try {
+    const buf = await downloadFromStorage(metadataURI);
+    return JSON.parse(buf.toString("utf-8")) as LawyerApplication;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a Lawyer object from on-chain record + 0G metadata.
+ */
+async function buildLawyer(walletAddress: string): Promise<Lawyer | null> {
+  const record = await readOnChainRecord(walletAddress);
+  if (record.status === LawyerStatus.None) return null;
+
+  const meta = await loadLawyerMetadata(record.metadataURI);
+
+  const statusMap: Record<number, "pending" | "verified" | "rejected"> = {
+    [LawyerStatus.Pending]: "pending",
+    [LawyerStatus.Verified]: "verified",
+    [LawyerStatus.Rejected]: "rejected",
+  };
+
   return {
-    id: row.id,
-    walletAddress: row.wallet_address,
-    fullName: row.full_name,
-    email: row.email,
-    barNumber: row.bar_number,
-    jurisdiction: row.jurisdiction,
-    specializations: JSON.parse(row.specializations) as string[],
-    yearsExperience: row.years_experience,
-    languages: JSON.parse(row.languages) as string[],
-    bio: row.bio,
-    website: row.website,
-    status: row.status,
-    appliedAt: row.applied_at,
-    verifiedAt: row.verified_at,
-    rejectionReason: row.rejection_reason,
+    id: walletAddress, // wallet is the canonical ID
+    walletAddress,
+    fullName: meta?.fullName ?? "",
+    email: meta?.email ?? "",
+    barNumber: meta?.barNumber ?? "",
+    jurisdiction: meta?.jurisdiction ?? "",
+    specializations: meta?.specializations ?? [],
+    yearsExperience: meta?.yearsExperience ?? 0,
+    languages: meta?.languages ?? [],
+    bio: meta?.bio ?? "",
+    website: meta?.website ?? "",
+    status: statusMap[record.status] ?? "pending",
+    appliedAt: record.appliedAt * 1000, // convert seconds → ms
+    verifiedAt: record.verifiedAt ? record.verifiedAt * 1000 : null,
+    rejectionReason: record.rejectionReason || null,
   };
 }
 
-export function upsertLawyerApplication(app: LawyerApplication & { id: string }): void {
-  const db = getDb();
-  db.prepare(
-    `INSERT INTO lawyers
-       (id, wallet_address, full_name, email, bar_number, jurisdiction,
-        specializations, years_experience, languages, bio, website, applied_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(wallet_address) DO UPDATE SET
-       full_name        = excluded.full_name,
-       email            = excluded.email,
-       bar_number       = excluded.bar_number,
-       jurisdiction     = excluded.jurisdiction,
-       specializations  = excluded.specializations,
-       years_experience = excluded.years_experience,
-       languages        = excluded.languages,
-       bio              = excluded.bio,
-       website          = excluded.website,
-       status           = 'pending',
-       applied_at       = excluded.applied_at,
-       verified_at      = NULL,
-       rejection_reason = NULL`
-  ).run(
-    app.id,
-    app.walletAddress,
-    app.fullName,
-    app.email,
-    app.barNumber,
-    app.jurisdiction,
-    JSON.stringify(app.specializations),
-    app.yearsExperience,
-    JSON.stringify(app.languages),
-    app.bio,
-    app.website ?? "",
-    Date.now()
-  );
+export async function upsertLawyerApplication(
+  app: LawyerApplication & { id: string },
+): Promise<void> {
+  // 1. Upload metadata JSON to 0G Storage
+  const json = JSON.stringify({
+    walletAddress: app.walletAddress,
+    fullName: app.fullName,
+    email: app.email,
+    barNumber: app.barNumber,
+    jurisdiction: app.jurisdiction,
+    specializations: app.specializations,
+    yearsExperience: app.yearsExperience,
+    languages: app.languages,
+    bio: app.bio,
+    website: app.website ?? "",
+  });
+  const { rootHash } = await uploadToStorage(Buffer.from(json, "utf-8"));
+
+  // 2. Register on-chain via operator
+  await serverApplyOnBehalf(app.walletAddress, rootHash);
 }
 
-export function getLawyerByWallet(walletAddress: string): Lawyer | null {
-  const db = getDb();
-  const row = db
-    .prepare("SELECT * FROM lawyers WHERE wallet_address = ?")
-    .get(walletAddress) as LawyerRow | undefined;
-  return row ? rowToLawyer(row) : null;
+export async function getLawyerByWallet(walletAddress: string): Promise<Lawyer | null> {
+  return buildLawyer(walletAddress);
 }
 
-export function getLawyerById(id: string): Lawyer | null {
-  const db = getDb();
-  const row = db
-    .prepare("SELECT * FROM lawyers WHERE id = ?")
-    .get(id) as LawyerRow | undefined;
-  return row ? rowToLawyer(row) : null;
+export async function getLawyerById(id: string): Promise<Lawyer | null> {
+  // In V2, id === walletAddress
+  return buildLawyer(id);
 }
 
-export function getVerifiedLawyers(): Lawyer[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT * FROM lawyers WHERE status = 'verified' ORDER BY full_name ASC")
-    .all() as LawyerRow[];
-  return rows.map(rowToLawyer);
+export async function getVerifiedLawyers(): Promise<Lawyer[]> {
+  const addresses = await getVerifiedAddresses();
+  const lawyers = await Promise.all(addresses.map(buildLawyer));
+  return lawyers.filter((l): l is Lawyer => l !== null);
 }
 
-export function getAllLawyerApplications(): Lawyer[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT * FROM lawyers ORDER BY applied_at DESC")
-    .all() as LawyerRow[];
-  return rows.map(rowToLawyer);
+export async function getAllLawyerApplications(): Promise<Lawyer[]> {
+  const addresses = await getAllApplicantAddresses();
+  const lawyers = await Promise.all(addresses.map(buildLawyer));
+  return lawyers.filter((l): l is Lawyer => l !== null);
 }
 
-export function verifyLawyer(id: string): boolean {
-  const db = getDb();
-  const result = db
-    .prepare("UPDATE lawyers SET status = 'verified', verified_at = ?, rejection_reason = NULL WHERE id = ?")
-    .run(Date.now(), id);
-  return (result.changes ?? 0) > 0;
+export async function verifyLawyer(walletAddress: string): Promise<boolean> {
+  try {
+    await contractVerifyLawyer(walletAddress);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function rejectLawyer(id: string, reason: string): boolean {
-  const db = getDb();
-  const result = db
-    .prepare("UPDATE lawyers SET status = 'rejected', rejection_reason = ?, verified_at = NULL WHERE id = ?")
-    .run(reason, id);
-  return (result.changes ?? 0) > 0;
+export async function rejectLawyer(walletAddress: string, reason: string): Promise<boolean> {
+  try {
+    await contractRejectLawyer(walletAddress, reason);
+    return true;
+  } catch {
+    return false;
+  }
 }

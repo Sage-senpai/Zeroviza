@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const { wallet, limit } = parsed.data;
 
-    const index = getStorageIndex(wallet);
+    const index = await getStorageIndex(wallet);
     if (!index?.historyRootHash) {
       return NextResponse.json({ messages: [] });
     }

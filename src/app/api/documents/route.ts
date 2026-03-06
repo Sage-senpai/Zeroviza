@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
   }
 
-  const documents = getDocuments(wallet);
+  const documents = await getDocuments(wallet);
   return NextResponse.json({ documents });
 }
 
@@ -25,7 +25,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Missing id or wallet" }, { status: 400 });
   }
 
-  const deleted = deleteDocument(id, wallet);
+  const deleted = await deleteDocument(id, wallet);
   if (!deleted) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });
   }
