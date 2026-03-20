@@ -64,7 +64,7 @@ export default function LawyersPage() {
             <div>
               <h1 className="text-2xl font-black text-[#0F172A]">Verified Lawyers</h1>
               <p className="text-[#64748B] text-sm mt-1">
-                Accredited immigration lawyers verified by Abobi Legal
+                Accredited immigration lawyers verified by ZeroViza
               </p>
             </div>
             <Link

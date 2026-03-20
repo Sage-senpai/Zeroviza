@@ -2,7 +2,7 @@
  * 0G Compute Network inference wrapper.
  *
  * Purpose:    Send chat messages to 0G's decentralized inference network
- *             and receive Abobi's Pidgin responses.
+ *             and receive ZeroViza's responses.
  * Depends on: @0glabs/0g-serving-broker, ethers
  * Used by:    /api/chat route
  *
@@ -14,10 +14,10 @@
 
 import { ethers } from "ethers";
 import {
-  ABOBI_SYSTEM_PROMPT,
+  ZEROVIZA_SYSTEM_PROMPT,
   MODEL_ID,
   INFERENCE_CONFIG,
-} from "@/lib/abobi/prompt";
+} from "@/lib/zeroviza/prompt";
 import type { InferenceMessage } from "@/types/chat";
 
 // ─── Lazy broker factory (cached per process) ─────────────────────────────────
@@ -59,15 +59,15 @@ function getBroker() {
 }
 
 // ─── Main inference function ──────────────────────────────────────────────────
-export interface AbobiResponse {
+export interface ZeroVizaResponse {
   content: string;
   providerAddress: string;
 }
 
-export async function sendToAbobi(
+export async function sendToZeroViza(
   userMessage: string,
   contextHistory: InferenceMessage[] = []
-): Promise<AbobiResponse> {
+): Promise<ZeroVizaResponse> {
   const providerAddress = process.env.OG_COMPUTE_PROVIDER_ADDRESS;
   if (!providerAddress) {
     throw new Error("OG_COMPUTE_PROVIDER_ADDRESS env var not set");
@@ -78,7 +78,7 @@ export async function sendToAbobi(
   // Build message array: system + context (last N) + new user message
   const recentContext = contextHistory.slice(-INFERENCE_CONFIG.contextWindow);
   const messages: InferenceMessage[] = [
-    { role: "system", content: ABOBI_SYSTEM_PROMPT },
+    { role: "system", content: ZEROVIZA_SYSTEM_PROMPT },
     ...recentContext,
     { role: "user", content: userMessage },
   ];

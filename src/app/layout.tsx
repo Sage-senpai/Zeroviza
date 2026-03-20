@@ -6,18 +6,29 @@ import "./globals.css";
 // CSS --font-sans falls back to system-ui in globals.css.
 
 export const metadata: Metadata = {
-  title: "Abobi Legal — AI Immigration Advisor",
+  title: "ZeroViza — AI Immigration Legal Aid",
   description:
-    "Multilingual AI immigration advisor. Get guidance on visas, asylum, work permits, and family reunification — powered by 0G decentralized compute.",
+    "Multilingual AI immigration advisor. Get guidance on visas, asylum, work permits, and family reunification — powered by 0G decentralized compute and storage.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: "/favicon.svg",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "ZeroViza — AI Immigration Legal Aid",
+    description: "Free, multilingual AI immigration guidance powered by 0G decentralized infrastructure.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ZeroViza — AI Immigration Legal Aid",
+    description: "Free, multilingual AI immigration guidance powered by 0G decentralized infrastructure.",
+    images: ["/og-image.png"],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Abobi Legal",
+    title: "ZeroViza",
   },
 };
 

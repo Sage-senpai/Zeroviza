@@ -83,14 +83,12 @@ export function Sidebar() {
       {/* Brand */}
       <div className="px-6 py-6 border-b border-[#1E293B]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#DC2626] flex items-center justify-center shadow-lg">
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-            </svg>
+          <div className="w-10 h-10 rounded-full border-[3px] border-[#DC2626] flex items-center justify-center shadow-lg bg-[#1E293B]">
+            <span className="text-white font-black text-[9px] tracking-wide">Viza</span>
           </div>
           <div>
-            <h1 className="text-white font-black text-lg tracking-tight">Abobi Legal</h1>
-            <p className="text-[#64748B] text-xs">AI Immigration Advisor</p>
+            <h1 className="text-white font-black text-lg tracking-tight">ZeroViza</h1>
+            <p className="text-[#64748B] text-xs">AI Immigration Legal Aid</p>
           </div>
         </div>
       </div>

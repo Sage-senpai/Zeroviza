@@ -91,12 +91,10 @@ export default function ConnectPage() {
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 rounded-xl bg-[#DC2626] flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
+            <div className="w-10 h-10 rounded-full border-[3px] border-[#DC2626] flex items-center justify-center shadow-lg">
+              <span className="text-white font-black text-[9px] tracking-wide">Viza</span>
             </div>
-            <span className="text-white font-black text-xl">Abobi Legal</span>
+            <span className="text-white font-black text-xl">ZeroViza</span>
           </div>
 
           <motion.div
@@ -161,12 +159,10 @@ export default function ConnectPage() {
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-10 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-[#DC2626] flex items-center justify-center shadow-lg">
-              <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
+            <div className="w-10 h-10 rounded-full border-[3px] border-[#DC2626] flex items-center justify-center shadow-lg bg-white">
+              <span className="text-[#0F172A] font-black text-[9px] tracking-wide">Viza</span>
             </div>
-            <span className="text-[#0F172A] font-black text-xl">Abobi Legal</span>
+            <span className="text-[#0F172A] font-black text-xl">ZeroViza</span>
           </div>
 
           <h2 className="text-3xl font-black text-[#0F172A] mb-2">Get started</h2>
@@ -207,7 +203,7 @@ export default function ConnectPage() {
 
           {/* Legal disclaimer */}
           <p className="text-[#94A3B8] text-xs text-center mt-8 leading-relaxed">
-            Abobi provides <strong>general legal information only</strong>, not legal advice.
+            ZeroViza provides <strong>general legal information only</strong>, not legal advice.
             Always consult a qualified immigration attorney for your specific case.
           </p>
 

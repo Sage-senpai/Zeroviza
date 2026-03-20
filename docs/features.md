@@ -1,4 +1,4 @@
-# Abobi Legal — Feature Specification
+# ZeroViza — Feature Specification
 
 ## V1 Core Features (Implemented)
 

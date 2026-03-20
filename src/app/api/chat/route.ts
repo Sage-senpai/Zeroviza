@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { sendToAbobi } from "@/lib/0g/compute";
+import { sendToZeroViza } from "@/lib/0g/compute";
 import {
   uploadHistory,
   downloadHistory,
 } from "@/lib/0g/storage";
 import { getStorageIndex, upsertStorageIndex } from "@/lib/db/client";
-import { calculateStreak, createDefaultProfile } from "@/lib/abobi/streak";
+import { calculateStreak, createDefaultProfile } from "@/lib/zeroviza/streak";
 import { uploadProfile, downloadProfile } from "@/lib/0g/storage";
 import type { ChatMessage, InferenceMessage } from "@/types/chat";
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       .map((m) => ({ role: m.role, content: m.content }));
 
     // 2. Run inference via 0G Compute
-    const { content } = await sendToAbobi(message, contextHistory);
+    const { content } = await sendToZeroViza(message, contextHistory);
 
     // 3. Create new messages
     const userMsg: ChatMessage = {

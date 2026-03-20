@@ -120,7 +120,7 @@ export default function LawyerApplyPage() {
           </div>
           <h2 className="text-xl font-black text-[#0F172A] mb-2">Already Verified</h2>
           <p className="text-[#64748B] text-sm mb-4">
-            {statusData.fullName ?? "You are"} already listed as a verified lawyer on Abobi Legal.
+            {statusData.fullName ?? "You are"} already listed as a verified lawyer on ZeroViza.
           </p>
           <Link href="/lawyers" className="inline-flex px-4 py-2 bg-[#DC2626] text-white text-sm font-semibold rounded-xl hover:bg-[#B91C1C] transition-colors">
             View Directory
@@ -200,7 +200,7 @@ export default function LawyerApplyPage() {
           </Link>
           <h1 className="text-2xl font-black text-[#0F172A]">Apply for Verification</h1>
           <p className="text-[#64748B] text-sm mt-1">
-            Submit your credentials to be listed as a verified immigration lawyer on Abobi Legal.
+            Submit your credentials to be listed as a verified immigration lawyer on ZeroViza.
           </p>
         </div>
 
@@ -366,7 +366,7 @@ export default function LawyerApplyPage() {
               rows={4}
               value={form.bio}
               onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              placeholder="Briefly describe your practice, experience with immigration cases, and how you can help Abobi Legal users…"
+              placeholder="Briefly describe your practice, experience with immigration cases, and how you can help ZeroViza users…"
               className="w-full px-3 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#DC2626] transition-colors resize-none"
             />
             <p className="text-xs text-[#94A3B8] mt-1.5">{form.bio.length} / 1000 characters</p>

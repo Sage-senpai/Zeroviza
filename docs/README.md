@@ -1,4 +1,4 @@
-# Abobi Legal — Technical Documentation
+# ZeroViza — Technical Documentation
 
 > AI-powered immigration legal guidance for underserved communities worldwide.
 > Built on 0G decentralized compute + storage.
@@ -35,9 +35,9 @@ cp .env.example .env.local
 | `OG_SERVER_PRIVATE_KEY` | Yes | Funded testnet wallet — pays for all compute + storage |
 | `OG_COMPUTE_PROVIDER_ADDRESS` | Yes | Discovered via CLI (see below) |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | No | Enables QR code wallet connection on mobile |
-| `NEXT_PUBLIC_APP_URL` | No | Production URL (e.g. `https://abobi.vercel.app`) |
+| `NEXT_PUBLIC_APP_URL` | No | Production URL (e.g. `https://zeroviza.vercel.app`) |
 
-> **Do NOT set `DATABASE_PATH`** on Vercel — SQLite auto-uses `/tmp/abobi.db`.
+> **Note**: V2.5 removed the SQLite dependency entirely. No `DATABASE_PATH` variable is needed.
 
 ### 4. Discover a Compute Provider
 
@@ -127,7 +127,7 @@ src/
 │   ├── db/
 │   │   ├── client.ts            # SQLite: storage index + document CRUD
 │   │   └── schema.ts            # Table definitions + TypeScript row types
-│   └── abobi/
+│   └── zeroviza/
 │       ├── prompt.ts            # Immigration AI system prompt + model config
 │       └── streak.ts            # Streak calculation + profile helpers
 ├── store/
@@ -204,15 +204,6 @@ const { createZGComputeNetworkBroker } = require("@0glabs/0g-serving-broker") as
 ```
 
 Both packages are listed in `serverExternalPackages` in `next.config.ts` to prevent webpack bundling.
-
-### SQLite on Vercel
-Vercel serverless functions can only write to `/tmp`. `client.ts` auto-detects the `VERCEL` environment variable:
-
-```ts
-const defaultPath = process.env.VERCEL ? "/tmp/abobi.db" : "./data/abobi.db";
-```
-
-Do not set `DATABASE_PATH` in the Vercel dashboard — it will override this logic.
 
 ### Broker Pattern
 The 0G Compute broker is initialized lazily and cached:

@@ -1,8 +1,72 @@
-# Abobi Legal
+# ZeroViza
 
-> AI-powered immigration legal guidance for underserved communities worldwide.
+> AI-powered immigration legal aid for underserved communities — fully decentralized on 0G.
 
-**Abobi Legal** is a multilingual immigration legal aid platform built on 0G decentralized infrastructure. It gives immigrants, refugees, and international professionals free, confidential AI guidance — covering visas, asylum, work permits, family reunification, and more — in 7+ languages, with tamper-proof blockchain document storage and on-chain verified lawyer credentials.
+**ZeroViza** is a multilingual AI immigration advisor built entirely on **0G decentralized infrastructure**. It gives immigrants, refugees, and international professionals free, confidential AI guidance on visas, asylum, work permits, family reunification, and more — in 7+ languages, with tamper-proof document storage and on-chain verified lawyer credentials.
+
+**No centralized database. No centralized AI. Everything runs on 0G.**
+
+---
+
+## 0G Integration
+
+ZeroViza uses **three core 0G components** — deeper integration than most projects:
+
+| 0G Component | How ZeroViza Uses It |
+|---|---|
+| **0G Compute** | AI immigration advisor runs inference via `@0glabs/0g-serving-broker` — model: `qwen/qwen-2.5-7b-instruct`. Server wallet funds compute so users pay nothing. |
+| **0G Storage** | All user data is content-addressed on 0G Storage via `@0glabs/0g-ts-sdk` — chat history, user profiles, uploaded documents (passports, IDs, forms), and lawyer metadata. |
+| **0G Chain** | Two smart contracts deployed on 0G Galileo: `StorageIndex.sol` (maps wallets to 0G root hashes) and `LawyerRegistry.sol` (on-chain lawyer verification with operator pattern). 39 tests pass. |
+
+### Architecture
+
+```
+User (wallet) ──> Next.js App ──> 0G Compute (AI inference)
+                       │
+                       ├──> 0G Storage (documents, history, profiles)
+                       │
+                       └──> 0G Chain (StorageIndex + LawyerRegistry contracts)
+```
+
+The **operator pattern** lets a server wallet pay for storage and compute on behalf of users — users only need a wallet for identity, not gas. Smart contracts serve as mutable pointers to immutable 0G Storage content. No SQLite, no Postgres, no centralized DB.
+
+### Smart Contracts
+
+| Contract | Address (0G Galileo) | Purpose |
+|----------|---------------------|---------|
+| `StorageIndex` | `0xbBb868BcA991c8C9e184F236bD7AfAB79e4F602b` | Maps wallet → 0G root hashes (history, profile, documents) |
+| `LawyerRegistry` | `0x009158249E904A7089f8649ABb9b9268780E2D9a` | On-chain lawyer verification + metadata URI |
+
+---
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| AI Immigration Advisor | Multilingual AI guided by USCIS, IRCC, UK Home Office, UNHCR, and 29+ destination countries |
+| Document Vault | Drag-drop upload to 0G Storage — tamper-proof, content-addressed, verifiable |
+| Lawyer Registry | On-chain verified lawyer directory with admin approval/rejection flow |
+| Eligibility Quiz | 4-step interactive quiz for instant visa eligibility assessment |
+| Document Checklists | Country + visa-type specific document requirement lists |
+| Resources Hub | Immigration guides for US, UK, Canada, EU, Australia, UAE, Japan, Nigeria + more |
+| Dashboard | Activity graph, daily streak, session stats |
+| Demo Mode | Full app preview without a wallet — zero friction onboarding |
+| Multilingual | English, Spanish, French, Hausa, Yoruba, Igbo, Portuguese + auto-detect |
+| 10+ Wallet Options | MetaMask, OKX, Phantom, Trust, Coinbase, Brave, Rabby, SubWallet, WalletConnect |
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js 15.5 (App Router), React 19
+- **CSS**: Tailwind v4 with `@theme inline` design tokens
+- **Auth**: Wagmi v2 + RainbowKit v2 — 0G Galileo (Chain ID 16602)
+- **AI**: `qwen/qwen-2.5-7b-instruct` via 0G Compute Network
+- **Storage**: `@0glabs/0g-ts-sdk` — content-addressed decentralized file storage
+- **Data Layer**: `StorageIndex.sol` + `LawyerRegistry.sol` on 0G Galileo (zero centralized DB)
+- **Contracts**: Foundry (Solidity 0.8.24), ethers.js 6.16 integration
+- **State**: Zustand + TanStack Query
+- **Animation**: Framer Motion
 
 ---
 
@@ -12,8 +76,8 @@
 
 - Node.js >= 22.0.0
 - pnpm >= 10
-- MetaMask or compatible EVM wallet (or use Demo Mode — no wallet needed)
-- Funded 0G Galileo testnet server wallet
+- MetaMask or compatible EVM wallet (or use Demo Mode)
+- Funded 0G Galileo testnet wallet ([faucet](https://faucet.0g.ai))
 - [Foundry](https://book.getfoundry.sh/) (for contract deployment)
 
 ### Install
@@ -58,7 +122,8 @@ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=...
 ### Deploy Contracts
 
 ```bash
-cd contracts && forge test -vvv   # 39 tests pass
+cd contracts
+forge test -vvv          # 39 tests pass
 
 forge script script/Deploy.s.sol \
   --rpc-url og_galileo --broadcast \
@@ -78,68 +143,78 @@ pnpm start     # serve production build
 
 ### One-Time AI Setup
 
+After first deploy, acknowledge the 0G Compute provider:
+
 ```bash
-curl -X POST http://localhost:3000/api/setup -H "x-setup-secret: YOUR_SETUP_SECRET"
+curl -X POST http://localhost:3000/api/setup
 ```
 
 ---
 
-## Features
+## API Routes (22 endpoints)
 
-| Feature | Description |
-|---------|-------------|
-| AI Immigration Advisor | Multilingual AI guided by USCIS, IRCC, UK Home Office, UNHCR |
-| Document Vault | Drag-drop upload to 0G blockchain — tamper-proof, verifiable by lawyers |
-| Lawyer Registry | On-chain verified lawyer directory with admin approval flow |
-| Eligibility Quiz | 4-step interactive quiz for instant visa eligibility assessment |
-| Document Checklists | Country + visa-type specific document requirement lists |
-| Policy Alerts | Strip of recent immigration policy changes and deadlines |
-| Resources Hub | Country guides: US, UK, Canada, EU, Australia, UAE, Japan, Nigeria + more |
-| Dashboard | Activity graph, daily streak, session stats |
-| Demo Mode | Full app preview without a wallet — zero friction onboarding |
-| Multilingual | English, Spanish, French, Hausa, Yoruba, Igbo, Portuguese + auto-detect |
-
----
-
-## Stack (V2.5)
-
-- **Framework**: Next.js 15.5 (App Router), React 19
-- **CSS**: Tailwind v4 with `@theme inline` design tokens
-- **Auth**: Wagmi v2 + RainbowKit v2 — 0G Galileo (Chain ID 16602)
-- **AI**: `qwen/qwen-2.5-7b-instruct` via 0G Compute Network
-- **Storage**: `@0glabs/0g-ts-sdk` — content-addressed decentralized file storage
-- **Data Layer**: `StorageIndex.sol` + `LawyerRegistry.sol` on 0G Galileo (no SQLite)
-- **Contracts**: Foundry (Solidity 0.8.24), ethers.js 6.16 integration
-- **State**: Zustand + TanStack Query
-- **Animation**: Framer Motion
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/setup` | GET/POST | Check config + acknowledge 0G compute provider |
+| `/api/chat` | POST | AI inference via 0G Compute |
+| `/api/history` | GET | Chat history from 0G Storage |
+| `/api/profile` | GET/POST | User profile from 0G Storage |
+| `/api/upload` | POST | Document upload to 0G Storage |
+| `/api/documents` | GET/DELETE | Document management |
+| `/api/lawyers` | GET | Verified lawyer list |
+| `/api/lawyers/apply` | POST | Submit lawyer application |
+| `/api/lawyers/status` | GET | Check application status |
+| `/api/lawyers/verify` | POST | Admin approve/reject |
 
 ---
 
-## Smart Contracts
+## Project Structure
 
-| Contract | Address (Galileo) | Purpose |
-|----------|-------------------|---------|
-| `StorageIndex` | `0xbBb868BcA991c8C9e184F236bD7AfAB79e4F602b` | Maps wallet -> 0G root hashes (history, profile, documents) |
-| `LawyerRegistry` | `0x009158249E904A7089f8649ABb9b9268780E2D9a` | On-chain lawyer verification + metadata URI |
-
-All user data lives on 0G Storage. Contracts serve as mutable pointers to the latest version. No centralized database.
+```
+zeroviza/
+├── contracts/                  # Foundry smart contracts
+│   ├── src/
+│   │   ├── StorageIndex.sol    # Wallet → 0G root hash mapping
+│   │   └── LawyerRegistry.sol  # On-chain lawyer verification
+│   ├── test/                   # 39 Forge tests
+│   └── script/Deploy.s.sol     # Deployment script
+├── src/
+│   ├── app/
+│   │   ├── (auth)/connect/     # Wallet connection landing page
+│   │   ├── (app)/              # Main app routes (guarded)
+│   │   │   ├── chat/           # AI advisor chat
+│   │   │   ├── documents/      # Document vault
+│   │   │   ├── resources/      # Immigration guides
+│   │   │   ├── lawyers/        # Lawyer directory + apply
+│   │   │   └── dashboard/      # Activity stats
+│   │   └── api/                # 22 API routes
+│   ├── lib/
+│   │   ├── 0g/                 # 0G Compute + Storage wrappers
+│   │   ├── contracts/          # ethers.js contract integrations
+│   │   ├── wallet/             # Chain config + RainbowKit setup
+│   │   ├── zeroviza/           # AI system prompt + streak logic
+│   │   └── db/client.ts        # Data layer (contract + 0G calls)
+│   ├── components/             # React components
+│   ├── hooks/                  # Custom hooks (useChat, useWallet)
+│   └── store/                  # Zustand stores
+└── public/                     # Static assets, PWA manifest
+```
 
 ---
 
 ## Deployment (Vercel)
 
 ```bash
-pnpm build
-vercel --prod
+pnpm build && vercel --prod
 ```
 
-Set all env vars in Vercel dashboard. V2.5 has **zero filesystem dependencies** — fully compatible with serverless.
+Set all env vars in Vercel dashboard. ZeroViza has **zero filesystem dependencies** — fully serverless compatible.
 
 ---
 
 ## Docs
 
-- [V2.5 Release Notes](docs/V2.5.md) — architecture changes, contract details, migration notes
+- [V2.5 Release Notes](docs/V2.5.md) — architecture changes, contract details
 - [Technical Documentation](docs/README.md) — full project structure, API reference
 - [Feature Specification](docs/features.md) — complete feature list with status
 - [Pitch Document](docs/pitch.md) — problem, market, solution, roadmap

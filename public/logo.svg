@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" fill="none">
+  <!--
+    ZeroViza wordmark logo
+    "Zer" in dark navy, big "O" circle in red, "Viza" nested inside the O
+  -->
+
+  <!-- "Zer" text -->
+  <text x="0" y="120" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="120" font-weight="900" fill="#0F172A" letter-spacing="-4">Zer</text>
+
+  <!-- The big "O" — red ring -->
+  <circle cx="310" cy="80" r="68" stroke="#DC2626" stroke-width="14" fill="#FFFFFF"/>
+
+  <!-- "Viza" inside the O -->
+  <text x="310" y="95" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="40" font-weight="900" fill="#0F172A" letter-spacing="2">Viza</text>
+</svg>

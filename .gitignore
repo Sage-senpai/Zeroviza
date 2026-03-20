@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Abobi: local SQLite database (contains user data)
+# ZeroViza: local data directory
 /data/
 
 # Keep .env.example but never .env.local

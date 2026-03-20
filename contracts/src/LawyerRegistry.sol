@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 /**
  * @title  LawyerRegistry
- * @notice On-chain verification registry for accredited immigration lawyers on Abobi Legal.
+ * @notice On-chain verification registry for accredited immigration lawyers on ZeroViza.
  *         The contract owner (deployer) is the admin who approves/rejects applications.
  *         An operator (server wallet) can submit applications on behalf of users.
  *         Profile metadata lives on 0G Storage; the contract stores the root hash as metadataURI.

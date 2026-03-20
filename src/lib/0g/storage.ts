@@ -51,7 +51,7 @@ export async function uploadToStorage(data: Buffer): Promise<UploadResult> {
   const { signer, indexerRpc, rpcUrl } = getStorageClients();
 
   // Write to a temp file (0G SDK works with file paths)
-  const tmpPath = path.join(tmpdir(), `abobi-${Date.now()}.bin`);
+  const tmpPath = path.join(tmpdir(), `zeroviza-${Date.now()}.bin`);
   await writeFile(tmpPath, data);
 
   try {
@@ -87,7 +87,7 @@ export async function downloadFromStorage(rootHash: string): Promise<Buffer> {
   const { Indexer } = await getSdk();
   const { indexerRpc } = getStorageClients();
 
-  const tmpPath = path.join(tmpdir(), `abobi-dl-${Date.now()}.bin`);
+  const tmpPath = path.join(tmpdir(), `zeroviza-dl-${Date.now()}.bin`);
 
   try {
     const indexer = new Indexer(indexerRpc);

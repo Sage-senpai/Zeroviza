@@ -47,7 +47,7 @@ const walletGroups = [
 ];
 
 export const wagmiConfig = getDefaultConfig({
-  appName: "Abobi",
+  appName: "ZeroViza",
   projectId: hasWalletConnectProjectId
     ? walletConnectProjectId
     : "00000000000000000000000000000000",

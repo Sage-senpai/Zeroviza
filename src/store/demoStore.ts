@@ -21,6 +21,6 @@ export const useDemoStore = create<DemoState>()(
       enableDemo: () => set({ isDemoMode: true }),
       disableDemo: () => set({ isDemoMode: false }),
     }),
-    { name: "abobi-demo" }
+    { name: "zeroviza-demo" }
   )
 );

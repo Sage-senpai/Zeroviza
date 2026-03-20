@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getStorageIndex, upsertStorageIndex } from "@/lib/db/client";
 import { downloadProfile, uploadProfile } from "@/lib/0g/storage";
-import { createDefaultProfile, getStreakData } from "@/lib/abobi/streak";
+import { createDefaultProfile, getStreakData } from "@/lib/zeroviza/streak";
 
 const WalletSchema = z.object({
   wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address"),

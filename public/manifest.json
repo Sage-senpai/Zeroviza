@@ -1,7 +1,7 @@
 {
-  "name": "Abobi Legal — AI Immigration Advisor",
-  "short_name": "Abobi Legal",
-  "description": "Multilingual AI immigration advisor. Visa guidance, asylum support, and document storage — powered by 0G decentralized compute.",
+  "name": "ZeroViza — AI Immigration Legal Aid",
+  "short_name": "ZeroViza",
+  "description": "Multilingual AI immigration advisor. Visa guidance, asylum support, and document storage — powered by 0G decentralized compute and storage.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8FAFC",

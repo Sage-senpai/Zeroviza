@@ -1,4 +1,4 @@
-# Abobi Legal — Pitch Document
+# ZeroViza — Pitch Document
 
 ## The Problem
 
@@ -35,13 +35,13 @@ Every year, **300 million+ people** navigate complex immigration systems with al
 - Harvey AI: $100M raised for AI legal tooling (enterprise)
 - Immigration.AI: $4M seed for US-only immigration bot
 
-**Abobi Legal's advantage**: Multilingual, multicountry, mobile-first, decentralized, free at point of use.
+**ZeroViza's advantage**: Multilingual, multicountry, mobile-first, decentralized, free at point of use.
 
 ---
 
 ## The Solution
 
-**Abobi Legal** is a Web3-native AI immigration advisor — a trusted companion that speaks your language, knows your visa pathway, stores your documents securely on blockchain, and connects you to pro bono lawyers when AI is not enough.
+**ZeroViza** is a Web3-native AI immigration advisor — a trusted companion that speaks your language, knows your visa pathway, stores your documents securely on blockchain, and connects you to pro bono lawyers when AI is not enough.
 
 ### Five core pillars
 
@@ -58,13 +58,13 @@ A 4-step interactive quiz assesses visa eligibility across 15+ countries and 40+
 Country-specific immigration guides for the US, UK, Canada, EU, Australia, UAE, Japan, South Korea, Nigeria, Brazil, Portugal, and Latin America — with a live policy alerts strip surfacing recent rule changes and deadline warnings.
 
 **5. Pro Bono Lawyer Matchmaking** *(V2)*
-When situations require a human expert — asylum claims, detention risk, appeals — Abobi connects users to vetted free and low-cost legal aid organizations: UNHCR, ILRC, Law Centres Network, Pro Asyl, RACS, and Vera Institute.
+When situations require a human expert — asylum claims, detention risk, appeals — ZeroViza connects users to vetted free and low-cost legal aid organizations: UNHCR, ILRC, Law Centres Network, Pro Asyl, RACS, and Vera Institute.
 
 ---
 
 ## Why 0G Network
 
-| Challenge | Traditional Approach | Abobi + 0G |
+| Challenge | Traditional Approach | ZeroViza + 0G |
 |-----------|---------------------|------------|
 | Document security | Cloud storage (deletable, hackable) | Merkle-hashed, decentralized, permanent |
 | AI censorship | Corporate API (geo-blocked, rate-limited) | 0G Compute — permissionless inference |
@@ -72,7 +72,7 @@ When situations require a human expert — asylum claims, detention risk, appeal
 | AI cost at scale | $0.002/token x millions of queries | Server wallet pays; users get it free |
 | Trust | "Trust us" | On-chain verifiable at every step |
 
-The 0G architecture makes Abobi Legal **censorship-resistant by design** — critical for users in countries with restricted internet or authoritarian document control.
+The 0G architecture makes ZeroViza **censorship-resistant by design** — critical for users in countries with restricted internet or authoritarian document control.
 
 ---
 
@@ -178,6 +178,6 @@ All users get unlimited AI guidance, document vault, and resource access. Server
 We are seeking:
 - **Infrastructure Grants**: 0G Foundation, UNHCR Innovation Fund, Mozilla Foundation, Ethereum Foundation
 - **Seed Round**: $500K to fund server infrastructure, legal content partnerships, and V2 development
-- **NGO Partnerships**: Legal aid organizations to co-brand, integrate, and distribute Abobi Legal to their client base
+- **NGO Partnerships**: Legal aid organizations to co-brand, integrate, and distribute ZeroViza to their client base
 
 > *"Every person deserves to understand their rights — regardless of what language they speak or how much money they have."*

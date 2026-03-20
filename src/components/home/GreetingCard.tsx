@@ -43,7 +43,7 @@ export function GreetingCard() {
 
         <div className="flex-1 min-w-0">
           <p className="text-[#DC2626] text-xs font-bold uppercase tracking-wider mb-0.5">
-            Abobi Legal AI
+            ZeroViza AI
           </p>
           <h2 className="text-[#0F172A] font-black text-xl leading-tight">
             {getGreeting()}{address && !isDemo ? `, ${shortenAddress(address)}` : ""}

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ─── Abobi Legal Design Tokens — 60-30-10 Rule ─────────────────────── */
+/* ─── ZeroViza Design Tokens — 60-30-10 Rule ─────────────────────── */
 @theme inline {
   /* 60% — White / Light backgrounds */
   --color-surface:        #FFFFFF;
