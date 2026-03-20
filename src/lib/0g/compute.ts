@@ -1,18 +1,18 @@
 /**
  * 0G Compute Network inference wrapper.
  *
- * Purpose:    Send chat messages to 0G's decentralized inference network
- *             and receive ZeroViza's responses.
- * Depends on: @0glabs/0g-serving-broker, ethers
- * Used by:    /api/chat route
+ * Two modes:
+ * 1. DIRECT API (preferred) — Uses 0G's OpenAI-compatible HTTP endpoint.
+ *    Set OG_COMPUTE_API_URL and OG_COMPUTE_API_KEY in .env.local.
+ *    No broker SDK needed, no OOM, no provider discovery.
+ *
+ * 2. BROKER SDK (legacy fallback) — Uses @0glabs/0g-serving-broker for
+ *    signed inference through a specific provider address.
+ *    Set OG_COMPUTE_PROVIDER_ADDRESS in .env.local.
  *
  * Server-side only. Server wallet funds compute.
- *
- * API note: broker.inference.* contains all inference methods.
- * broker.ledger.* handles fund management.
  */
 
-import { ethers } from "ethers";
 import {
   ZEROVIZA_SYSTEM_PROMPT,
   MODEL_ID,
@@ -20,31 +20,74 @@ import {
 } from "@/lib/zeroviza/prompt";
 import type { InferenceMessage } from "@/types/chat";
 
-// ─── Lazy broker factory (cached per process) ─────────────────────────────────
+// ─── Direct API mode ─────────────────────────────────────────────────────────
+
+/**
+ * Call 0G Compute Network via its OpenAI-compatible REST API.
+ * This is the recommended approach — lightweight, no SDK dependency for inference.
+ *
+ * Env vars:
+ *   OG_COMPUTE_API_URL  — e.g. https://compute-network-1.integratenetwork.work/v1
+ *   OG_COMPUTE_API_KEY  — e.g. app-sk-xxx (from 0G dashboard)
+ */
+async function callDirectAPI(
+  messages: InferenceMessage[],
+  modelId: string
+): Promise<{ content: string }> {
+  const apiUrl = process.env.OG_COMPUTE_API_URL!;
+  const apiKey = process.env.OG_COMPUTE_API_KEY!;
+
+  const endpoint = `${apiUrl.replace(/\/+$/, "")}/chat/completions`;
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages,
+      max_tokens: INFERENCE_CONFIG.maxTokens,
+      temperature: INFERENCE_CONFIG.temperature,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`0G Compute API error ${response.status}: ${errText}`);
+  }
+
+  const data = (await response.json()) as {
+    choices: Array<{ message: { content: string } }>;
+  };
+
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error("0G Compute returned empty response");
+
+  return { content };
+}
+
+// ─── Broker SDK mode (legacy) ────────────────────────────────────────────────
+
+import { ethers } from "ethers";
+
 type ZGBroker = Awaited<ReturnType<typeof initBroker>>;
 let _brokerPromise: Promise<ZGBroker> | null = null;
 
 async function initBroker() {
-  // Use require() — dynamic import() triggers Node.js ESM loader which cannot
-  // resolve named exports from the CJS bundle inside @0glabs/0g-serving-broker.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { createZGComputeNetworkBroker } = require("@0glabs/0g-serving-broker") as typeof import("@0glabs/0g-serving-broker");
 
-  const rpcUrl = process.env.NEXT_PUBLIC_0G_RPC_URL;
+  // Use dedicated compute RPC (mainnet) — separate from testnet used for contracts/storage
+  const rpcUrl = process.env.OG_COMPUTE_RPC_URL ?? process.env.NEXT_PUBLIC_0G_RPC_URL;
   const privateKey = process.env.OG_SERVER_PRIVATE_KEY;
-
   if (!rpcUrl || !privateKey) {
-    throw new Error(
-      "Missing 0G Compute env vars: NEXT_PUBLIC_0G_RPC_URL, OG_SERVER_PRIVATE_KEY"
-    );
+    throw new Error("Missing env vars: OG_COMPUTE_RPC_URL, OG_SERVER_PRIVATE_KEY");
   }
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  // Cast wallet — 0g-serving-broker uses its own ethers version (6.13.1)
-  // but is runtime compatible with 6.16.0. The cast avoids the private
-  // class field mismatch between ESM and CJS ethers builds.
   const wallet = new ethers.Wallet(privateKey, provider) as unknown as Parameters<typeof createZGComputeNetworkBroker>[0];
-
   return createZGComputeNetworkBroker(wallet);
 }
 
@@ -58,16 +101,10 @@ function getBroker() {
   return _brokerPromise;
 }
 
-// ─── Main inference function ──────────────────────────────────────────────────
-export interface ZeroVizaResponse {
-  content: string;
-  providerAddress: string;
-}
-
-export async function sendToZeroViza(
-  userMessage: string,
-  contextHistory: InferenceMessage[] = []
-): Promise<ZeroVizaResponse> {
+async function callBrokerAPI(
+  messages: InferenceMessage[],
+  modelId: string
+): Promise<{ content: string; providerAddress: string }> {
   const providerAddress = process.env.OG_COMPUTE_PROVIDER_ADDRESS;
   if (!providerAddress) {
     throw new Error("OG_COMPUTE_PROVIDER_ADDRESS env var not set");
@@ -75,32 +112,25 @@ export async function sendToZeroViza(
 
   const broker = await getBroker();
 
-  // Build message array: system + context (last N) + new user message
-  const recentContext = contextHistory.slice(-INFERENCE_CONFIG.contextWindow);
-  const messages: InferenceMessage[] = [
-    { role: "system", content: ZEROVIZA_SYSTEM_PROMPT },
-    ...recentContext,
-    { role: "user", content: userMessage },
-  ];
-
   const requestBody = {
-    model: MODEL_ID,
+    model: modelId,
     messages,
     max_tokens: INFERENCE_CONFIG.maxTokens,
     temperature: INFERENCE_CONFIG.temperature,
   };
 
-  // Get signed headers from broker.inference
   const headers = await broker.inference.getRequestHeaders(
     providerAddress,
     JSON.stringify(requestBody)
   );
 
-  // Get provider endpoint from broker.inference
   const metadata = await broker.inference.getServiceMetadata(providerAddress);
-  const endpoint = `${metadata.endpoint}/v1/proxy/chat/completions`;
+  // metadata.endpoint may already include /v1/proxy — just append /chat/completions
+  const baseUrl = metadata.endpoint.replace(/\/+$/, "");
+  const endpoint = `${baseUrl}/chat/completions`;
 
-  // Call the inference endpoint
+  console.log(`[compute/broker] Calling: ${endpoint} with model: ${modelId}`);
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -112,35 +142,148 @@ export async function sendToZeroViza(
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Inference request failed ${response.status}: ${errText}`);
+    throw new Error(`Broker inference failed ${response.status}: ${errText}`);
   }
 
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
   };
 
-  // Extract chatID from response header for fee settlement
   const chatId = response.headers.get("ZG-Res-Key") ?? undefined;
-
-  // Settle fees via broker.inference
   await broker.inference.processResponse(
     providerAddress,
     chatId,
     data.choices[0]?.message?.content
   );
 
-  const content =
-    data.choices[0]?.message?.content ??
-    "E no respond, abeg try again!";
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error("Broker returned empty response");
 
   return { content, providerAddress };
 }
 
-// ─── One-time provider acknowledgment (run during setup) ─────────────────────
+// ─── Unified inference function ──────────────────────────────────────────────
+
+export interface ZeroVizaResponse {
+  content: string;
+  providerAddress: string;
+}
+
+/**
+ * Detect which mode to use (priority order):
+ * 1. direct  — OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY (0G direct or any OpenAI-compat API)
+ * 2. broker  — OG_COMPUTE_PROVIDER_ADDRESS via broker SDK (needs mainnet OG tokens)
+ * 3. groq    — GROQ_API_KEY fallback (free at console.groq.com, same OpenAI-compat format)
+ */
+function getMode(): "direct" | "broker" | "groq" {
+  if (process.env.OG_COMPUTE_API_URL && process.env.OG_COMPUTE_API_KEY) {
+    return "direct";
+  }
+  if (process.env.OG_COMPUTE_PROVIDER_ADDRESS) {
+    return "broker";
+  }
+  if (process.env.GROQ_API_KEY) {
+    return "groq";
+  }
+  throw new Error(
+    "No AI inference configured. Options:\n" +
+    "1. 0G Compute broker: set OG_COMPUTE_PROVIDER_ADDRESS + fund mainnet wallet with OG tokens\n" +
+    "2. 0G Compute direct: set OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY\n" +
+    "3. Groq fallback (free): set GROQ_API_KEY from console.groq.com"
+  );
+}
+
+async function callGroqAPI(
+  messages: InferenceMessage[]
+): Promise<{ content: string }> {
+  const endpoint = "https://api.groq.com/openai/v1/chat/completions";
+  // Best Groq model for legal reasoning — fast and capable
+  const groqModel = "llama-3.3-70b-versatile";
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: groqModel,
+      messages,
+      max_tokens: INFERENCE_CONFIG.maxTokens,
+      temperature: INFERENCE_CONFIG.temperature,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Groq API error ${response.status}: ${errText}`);
+  }
+
+  const data = (await response.json()) as {
+    choices: Array<{ message: { content: string } }>;
+  };
+
+  const content = data.choices[0]?.message?.content;
+  if (!content) throw new Error("Groq returned empty response");
+  return { content };
+}
+
+export async function sendToZeroViza(
+  userMessage: string,
+  contextHistory: InferenceMessage[] = []
+): Promise<ZeroVizaResponse> {
+  const mode = getMode();
+
+  // Build message array
+  const recentContext = contextHistory.slice(-INFERENCE_CONFIG.contextWindow);
+  const messages: InferenceMessage[] = [
+    { role: "system", content: ZEROVIZA_SYSTEM_PROMPT },
+    ...recentContext,
+    { role: "user", content: userMessage },
+  ];
+
+  if (mode === "direct") {
+    console.log(`[compute/direct] Sending to 0G Compute API (model: ${MODEL_ID})`);
+    const result = await callDirectAPI(messages, MODEL_ID);
+    return { content: result.content, providerAddress: "0g-compute-direct-api" };
+  }
+
+  if (mode === "groq") {
+    console.log(`[compute/groq] Using Groq fallback (llama-3.3-70b-versatile)`);
+    const result = await callGroqAPI(messages);
+    return { content: result.content, providerAddress: "groq-fallback" };
+  }
+
+  // Broker mode — requires mainnet OG tokens pre-deposited
+  // Fund your server wallet at: https://hub.0g.ai → Bridge → then run /api/setup
+  console.log(`[compute/broker] Sending via 0G broker SDK (model: ${MODEL_ID})`);
+  return callBrokerAPI(messages, MODEL_ID);
+}
+
+// ─── Setup helpers (broker only) ─────────────────────────────────────────────
+
 export async function acknowledgeProvider(): Promise<void> {
   const providerAddress = process.env.OG_COMPUTE_PROVIDER_ADDRESS;
   if (!providerAddress) throw new Error("OG_COMPUTE_PROVIDER_ADDRESS not set");
 
   const broker = await getBroker();
   await broker.inference.acknowledgeProviderSigner(providerAddress);
+}
+
+export async function listServices(): Promise<Record<string, unknown>[]> {
+  const broker = await getBroker();
+  try {
+    const services = await broker.inference.listService();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (services ?? []).map((s: any) => ({
+      provider: String(s.provider ?? s[0] ?? ""),
+      name: String(s.name ?? s.model ?? ""),
+      serviceType: String(s.serviceType ?? s[1] ?? ""),
+      url: String(s.url ?? s[2] ?? ""),
+      model: String(s.model ?? s[6] ?? ""),
+    }));
+  } catch (err) {
+    console.error("[listServices]", err);
+    return [];
+  }
 }

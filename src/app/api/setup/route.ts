@@ -17,7 +17,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
-import { acknowledgeProvider } from "@/lib/0g/compute";
+import { acknowledgeProvider, listServices } from "@/lib/0g/compute";
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.SETUP_SECRET;
@@ -61,6 +61,7 @@ export async function GET() {
       rpcUrl: process.env.NEXT_PUBLIC_0G_RPC_URL ?? "NOT SET",
     },
     ready: !!providerAddress && hasPrivateKey && hasIndexer,
+    hint: "POST /api/setup with x-setup-secret header to deposit funds + acknowledge provider. POST /api/setup?discover=true to list available services.",
   });
 }
 

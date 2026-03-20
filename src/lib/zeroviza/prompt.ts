@@ -222,11 +222,10 @@ RESPONSE STYLE
 - If the user shares a personal story or difficult situation, respond to the PERSON first, then the question.
 - Never say "I'm just an AI" or minimize your capabilities. You are a powerful tool — own that while being honest about limitations.`;
 
-// Model selection — 0G Compute Network
-// Available: deepseek-chat-v3, glm-5, qwen3-vl-30b, gpt-oss-120b, qwen-2.5-7b-instruct
-// Using DeepSeek Chat v3 for superior legal reasoning at low cost ($0.18/$0.60 per 1M tokens)
-// Fallback: qwen/qwen-2.5-7b-instruct if provider doesn't serve deepseek
-export const MODEL_ID = process.env.OG_COMPUTE_MODEL_ID || "qwen/qwen-2.5-7b-instruct";
+// Model selection — 0G Compute Network direct API
+// GLM-5: 744B MoE, MIT license, flagship model on 0G Compute (live March 2026)
+// Alternatives: qwen/qwen-2.5-7b-instruct, meta-llama/Llama-3.1-8B-Instruct
+export const MODEL_ID = process.env.OG_COMPUTE_MODEL_ID || "zai-org/GLM-5-FP8";
 
 export const INFERENCE_CONFIG = {
   maxTokens: 1200,       // legal responses need room for structured guidance
