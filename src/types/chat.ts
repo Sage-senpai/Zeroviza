@@ -21,7 +21,6 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   message: ChatMessage;
-  streakUpdated: boolean;
 }
 
 // For OpenAI-compatible inference API

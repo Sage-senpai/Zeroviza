@@ -118,10 +118,7 @@ export async function POST(req: NextRequest) {
     //    for the slow 0G upload + contract write.
     persistToStorage(walletAddress, updatedHistory, index).catch(() => {});
 
-    return NextResponse.json({
-      message: assistantMsg,
-      streakUpdated: false,
-    });
+    return NextResponse.json({ message: assistantMsg });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/chat]", message);

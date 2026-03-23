@@ -44,11 +44,13 @@ export function useChat() {
         const data = (await res.json()) as ChatResponse;
         addMessage(data.message);
 
-        // Invalidate history and profile caches after successful chat
+        // Invalidate history + profile caches after successful chat.
+        // Profile is invalidated with a short delay so the background
+        // persist to 0G Storage has time to complete the streak update.
         await queryClient.invalidateQueries({ queryKey: ["history", address] });
-        if (data.streakUpdated) {
-          await queryClient.invalidateQueries({ queryKey: ["profile", address] });
-        }
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["profile", address] });
+        }, 3000);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong";
         setError(msg);
