@@ -49,7 +49,7 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
   const canSend = value.trim().length > 0 && !isLoading && !disabled;
 
   return (
-    <div className="border-t border-[#E2E8F0] bg-white px-4 pt-3 pb-4 safe-bottom">
+    <div className="border-t border-[#E2E8F0] bg-white px-4 pt-3 pb-4 flex-shrink-0">
 
       {/* Quick prompts */}
       <AnimatePresence>

@@ -49,7 +49,7 @@ export default function ChatPage() {
   }, [searchParams, address, isLoading, sendMessage]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 bg-[#F8FAFC] overflow-hidden mb-16 lg:mb-0">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
