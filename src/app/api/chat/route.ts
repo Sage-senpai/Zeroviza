@@ -23,7 +23,7 @@ const RequestSchema = z.object({
 async function persistToStorage(
   walletAddress: string,
   updatedHistory: ChatMessage[],
-  index: { profileRootHash?: string } | null
+  index: { profileRootHash?: string | null } | null
 ) {
   try {
     // Load or create profile
