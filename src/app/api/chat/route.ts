@@ -16,6 +16,51 @@ const RequestSchema = z.object({
   walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address"),
 });
 
+/**
+ * Persist history + profile to 0G Storage and update the on-chain index.
+ * Runs after the response is sent so the user isn't blocked.
+ */
+async function persistToStorage(
+  walletAddress: string,
+  updatedHistory: ChatMessage[],
+  index: { profileRootHash?: string } | null
+) {
+  try {
+    // Load or create profile
+    let profile = null;
+    if (index?.profileRootHash) {
+      try {
+        profile = await downloadProfile(index.profileRootHash);
+      } catch {
+        profile = null;
+      }
+    }
+    if (!profile) {
+      profile = createDefaultProfile(walletAddress);
+    }
+
+    const updatedProfile = calculateStreak(profile);
+
+    // Upload history + profile in parallel
+    const [historyResult, profileResult] = await Promise.all([
+      uploadHistory(updatedHistory),
+      uploadProfile(updatedProfile),
+    ]);
+
+    // Update on-chain index
+    await upsertStorageIndex(
+      walletAddress,
+      historyResult.rootHash,
+      profileResult.rootHash
+    );
+
+    console.log("[/api/chat] Persisted to 0G Storage successfully");
+  } catch (err) {
+    // Non-fatal — user already got their response
+    console.error("[/api/chat] Background persist failed:", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -30,17 +75,17 @@ export async function POST(req: NextRequest) {
 
     const { message, walletAddress } = parsed.data;
 
-    // 1. Load existing history and profile from 0G Storage
-    const index = await getStorageIndex(walletAddress);
-
+    // 1. Load context from 0G Storage (for conversation continuity)
     let history: ChatMessage[] = [];
-    if (index?.historyRootHash) {
-      try {
+    let index: Awaited<ReturnType<typeof getStorageIndex>> = null;
+    try {
+      index = await getStorageIndex(walletAddress);
+      if (index?.historyRootHash) {
         history = await downloadHistory(index.historyRootHash);
-      } catch {
-        // First time or corrupted — start fresh
-        history = [];
       }
+    } catch {
+      // First time or network issues — proceed without context
+      history = [];
     }
 
     // Build context for inference (recent messages only)
@@ -48,10 +93,10 @@ export async function POST(req: NextRequest) {
       .slice(-10)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    // 2. Run inference via 0G Compute
+    // 2. Run inference — this is the only blocking call the user waits for
     const { content } = await sendToZeroViza(message, contextHistory);
 
-    // 3. Create new messages
+    // 3. Create messages
     const userMsg: ChatMessage = {
       id: nanoid(),
       role: "user",
@@ -68,39 +113,14 @@ export async function POST(req: NextRequest) {
 
     const updatedHistory = [...history, userMsg, assistantMsg];
 
-    // 4. Load or create profile, update streak
-    let profile = null;
-    if (index?.profileRootHash) {
-      try {
-        profile = await downloadProfile(index.profileRootHash);
-      } catch {
-        profile = null;
-      }
-    }
-
-    if (!profile) {
-      profile = createDefaultProfile(walletAddress);
-    }
-
-    const updatedProfile = calculateStreak(profile);
-    const streakUpdated = updatedProfile.streak !== profile.streak;
-
-    // 5. Upload both history and profile to 0G Storage (parallel)
-    const [historyResult, profileResult] = await Promise.all([
-      uploadHistory(updatedHistory),
-      uploadProfile(updatedProfile),
-    ]);
-
-    // 6. Update on-chain index
-    await upsertStorageIndex(
-      walletAddress,
-      historyResult.rootHash,
-      profileResult.rootHash
-    );
+    // 4. Fire-and-forget: persist to 0G Storage in the background.
+    //    The user gets their AI response immediately without waiting
+    //    for the slow 0G upload + contract write.
+    persistToStorage(walletAddress, updatedHistory, index).catch(() => {});
 
     return NextResponse.json({
       message: assistantMsg,
-      streakUpdated,
+      streakUpdated: false,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

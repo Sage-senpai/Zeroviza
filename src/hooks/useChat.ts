@@ -56,7 +56,7 @@ export function useChat() {
         addMessage({
           id: nanoid(),
           role: "assistant",
-          content: `Omo, e no work: ${msg}. Abeg try again!`,
+          content: `Sorry, something went wrong: ${msg}. Please try again.`,
           timestamp: Date.now(),
         });
       } finally {
