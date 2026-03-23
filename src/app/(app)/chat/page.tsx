@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useWallet } from "@/hooks/useWallet";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,8 @@ export default function ChatPage() {
   const { address } = useWallet();
   const { messages, isLoading, sendMessage } = useChat();
   const setMessages = useChatStore((s) => s.setMessages);
+  const searchParams = useSearchParams();
+  const autoSentRef = useRef(false);
 
   const { data: history } = useQuery({
     queryKey: ["history", address],
@@ -35,6 +38,15 @@ export default function ChatPage() {
       setMessages(history);
     }
   }, [history, messages.length, setMessages]);
+
+  // Auto-send from ?q= query param (e.g. from "Ask AI about this" links)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && address && !autoSentRef.current && !isLoading) {
+      autoSentRef.current = true;
+      sendMessage(q);
+    }
+  }, [searchParams, address, isLoading, sendMessage]);
 
   return (
     <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
