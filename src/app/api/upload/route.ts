@@ -18,6 +18,9 @@ import { uploadToStorage } from "@/lib/0g/storage";
 import { insertDocument } from "@/lib/db/client";
 import type { UserDocument } from "@/types/storage";
 
+// Allow up to 60s for 0G Storage upload (on-chain tx + indexer confirmation)
+export const maxDuration = 60;
+
 const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 
 const ALLOWED_TYPES = new Set([

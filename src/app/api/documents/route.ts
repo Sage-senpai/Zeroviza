@@ -3,6 +3,8 @@
  * DELETE /api/documents?id=...&wallet=0x... → remove a document record (not from 0G — content-addressed)
  */
 
+export const maxDuration = 60;
+
 import { NextRequest, NextResponse } from "next/server";
 import { getDocuments, deleteDocument } from "@/lib/db/client";
 

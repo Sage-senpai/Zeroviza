@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { sendToZeroViza } from "@/lib/0g/compute";
+
+// Allow up to 60s for AI inference + 0G storage
+export const maxDuration = 60;
 import {
   uploadHistory,
   downloadHistory,

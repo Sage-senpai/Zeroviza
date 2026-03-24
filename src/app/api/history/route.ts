@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getStorageIndex } from "@/lib/db/client";
 import { downloadHistory } from "@/lib/0g/storage";
 
+export const maxDuration = 60;
+
 const QuerySchema = z.object({
   wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address"),
   limit: z.coerce.number().min(1).max(2000).default(50),

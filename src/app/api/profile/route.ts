@@ -4,6 +4,8 @@ import { getStorageIndex, upsertStorageIndex } from "@/lib/db/client";
 import { downloadProfile, uploadProfile } from "@/lib/0g/storage";
 import { createDefaultProfile, getStreakData } from "@/lib/zeroviza/streak";
 
+export const maxDuration = 60;
+
 const WalletSchema = z.object({
   wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid wallet address"),
 });

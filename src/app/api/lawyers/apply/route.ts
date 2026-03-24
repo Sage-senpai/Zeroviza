@@ -4,6 +4,8 @@
  * Submits (or re-submits) a lawyer verification application.
  */
 
+export const maxDuration = 60;
+
 import { NextRequest, NextResponse } from "next/server";
 import { upsertLawyerApplication, getLawyerByWallet } from "@/lib/db/client";
 import type { LawyerApplication } from "@/types/lawyer";
