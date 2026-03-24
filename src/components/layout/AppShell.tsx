@@ -14,7 +14,7 @@ export function AppShell({ children }: AppShellProps) {
       <Sidebar />
 
       {/* Main content area — scrolls independently */}
-      <main className="flex-1 flex flex-col overflow-y-auto pb-20 lg:pb-0 min-h-0">
+      <main className="flex-1 flex flex-col overflow-y-auto pb-20 lg:pb-0 min-h-0 relative">
         {children}
       </main>
 
