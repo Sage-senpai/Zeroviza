@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // Mark server-only packages so Next.js doesn't bundle them.
   serverExternalPackages: [
     "ethers",
-    "@0glabs/0g-ts-sdk",
+    "@0gfoundation/0g-ts-sdk",
     "@0glabs/0g-serving-broker",
   ],
 

@@ -2,7 +2,7 @@
  * 0G Storage SDK wrapper.
  *
  * Purpose:    Upload/download chat history and user profiles to 0G decentralized storage.
- * Depends on: @0glabs/0g-ts-sdk, ethers
+ * Depends on: @0gfoundation/0g-ts-sdk, ethers
  * Used by:    /api/chat, /api/history, /api/profile routes
  *
  * Server-side only. The server wallet funds storage transactions.
@@ -17,9 +17,9 @@ import type { UploadResult } from "@/types/storage";
 // ─── Lazy SDK imports (avoids bundling issues) ────────────────────────────────
 async function getSdk() {
   // Use require() — dynamic import() triggers Node.js ESM loader which cannot
-  // resolve named exports from the CJS bundle inside @0glabs/0g-ts-sdk.
+  // resolve named exports from the CJS bundle inside @0gfoundation/0g-ts-sdk.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { ZgFile, Indexer } = require("@0glabs/0g-ts-sdk") as typeof import("@0glabs/0g-ts-sdk");
+  const { ZgFile, Indexer } = require("@0gfoundation/0g-ts-sdk") as typeof import("@0gfoundation/0g-ts-sdk");
   return { ZgFile, Indexer };
 }
 
