@@ -170,27 +170,27 @@ export interface ZeroVizaResponse {
 }
 
 /**
- * Detect which mode to use (priority order):
- * 1. direct  — OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY (0G direct or any OpenAI-compat API)
- * 2. broker  — OG_COMPUTE_PROVIDER_ADDRESS via broker SDK (needs mainnet OG tokens)
- * 3. groq    — GROQ_API_KEY fallback (free at console.groq.com, same OpenAI-compat format)
+ * Inference provider priority (highest → lowest):
+ *   1. 0G Compute direct API  (OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY)
+ *   2. 0G Compute broker SDK  (OG_COMPUTE_PROVIDER_ADDRESS, needs mainnet OG)
+ *   3. Groq emergency fallback (GROQ_API_KEY) — ONLY used if both 0G paths fail
+ *
+ * On every request we try 0G first. Groq is a circuit-breaker so the UI stays
+ * responsive even if the mainnet compute provider is temporarily unavailable
+ * (e.g. during demo recording or live judge verification).
  */
-function getMode(): "direct" | "broker" | "groq" {
-  if (process.env.OG_COMPUTE_API_URL && process.env.OG_COMPUTE_API_KEY) {
-    return "direct";
-  }
-  if (process.env.OG_COMPUTE_PROVIDER_ADDRESS) {
-    return "broker";
-  }
-  if (process.env.GROQ_API_KEY) {
-    return "groq";
-  }
-  throw new Error(
-    "No AI inference configured. Options:\n" +
-    "1. 0G Compute broker: set OG_COMPUTE_PROVIDER_ADDRESS + fund mainnet wallet with OG tokens\n" +
-    "2. 0G Compute direct: set OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY\n" +
-    "3. Groq fallback (free): set GROQ_API_KEY from console.groq.com"
-  );
+type InferenceProvider = "0g-direct" | "0g-broker" | "groq-fallback";
+
+function has0GDirect(): boolean {
+  return !!(process.env.OG_COMPUTE_API_URL && process.env.OG_COMPUTE_API_KEY);
+}
+
+function has0GBroker(): boolean {
+  return !!process.env.OG_COMPUTE_PROVIDER_ADDRESS;
+}
+
+function hasGroqFallback(): boolean {
+  return !!process.env.GROQ_API_KEY;
 }
 
 async function callGroqAPI(
@@ -232,8 +232,6 @@ export async function sendToZeroViza(
   userMessage: string,
   contextHistory: InferenceMessage[] = []
 ): Promise<ZeroVizaResponse> {
-  const mode = getMode();
-
   // Build message array
   const recentContext = contextHistory.slice(-INFERENCE_CONFIG.contextWindow);
   const messages: InferenceMessage[] = [
@@ -242,22 +240,63 @@ export async function sendToZeroViza(
     { role: "user", content: userMessage },
   ];
 
-  if (mode === "direct") {
-    console.log(`[compute/direct] Sending to 0G Compute API (model: ${MODEL_ID})`);
-    const result = await callDirectAPI(messages, MODEL_ID);
-    return { content: result.content, providerAddress: "0g-compute-direct-api" };
+  const attempts: Array<{ provider: InferenceProvider; error: string }> = [];
+
+  // ── Attempt 1: 0G Compute direct API ─────────────────────────────────────
+  if (has0GDirect()) {
+    try {
+      console.log(`[0G-compute/direct] Calling 0G Compute Network (${MODEL_ID})`);
+      const result = await callDirectAPI(messages, MODEL_ID);
+      console.log(`[0G-compute/direct] ✓ success`);
+      return { content: result.content, providerAddress: "0g-compute-direct" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[0G-compute/direct] ✗ failed: ${msg}`);
+      attempts.push({ provider: "0g-direct", error: msg });
+    }
   }
 
-  if (mode === "groq") {
-    console.log(`[compute/groq] Using Groq fallback (llama-3.3-70b-versatile)`);
-    const result = await callGroqAPI(messages);
-    return { content: result.content, providerAddress: "groq-fallback" };
+  // ── Attempt 2: 0G Compute broker SDK ─────────────────────────────────────
+  if (has0GBroker()) {
+    try {
+      console.log(`[0G-compute/broker] Calling 0G Compute via broker (${MODEL_ID})`);
+      const result = await callBrokerAPI(messages, MODEL_ID);
+      console.log(`[0G-compute/broker] ✓ success — fee settled on-chain`);
+      return result;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[0G-compute/broker] ✗ failed: ${msg}`);
+      attempts.push({ provider: "0g-broker", error: msg });
+    }
   }
 
-  // Broker mode — requires mainnet OG tokens pre-deposited
-  // Fund your server wallet at: https://hub.0g.ai → Bridge → then run /api/setup
-  console.log(`[compute/broker] Sending via 0G broker SDK (model: ${MODEL_ID})`);
-  return callBrokerAPI(messages, MODEL_ID);
+  // ── Attempt 3 (emergency): Groq fallback ─────────────────────────────────
+  // Only reached if BOTH 0G paths failed or aren't configured.
+  // This exists so the UI stays responsive during live demos even if the
+  // mainnet compute provider is temporarily unavailable.
+  if (hasGroqFallback()) {
+    try {
+      console.log(`[groq-fallback] 0G Compute unavailable — using emergency fallback (llama-3.3-70b-versatile)`);
+      const result = await callGroqAPI(messages);
+      return { content: result.content, providerAddress: "groq-fallback" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      attempts.push({ provider: "groq-fallback", error: msg });
+    }
+  }
+
+  // All providers failed or none configured
+  if (attempts.length === 0) {
+    throw new Error(
+      "No AI inference provider configured. Set one of:\n" +
+      "  • OG_COMPUTE_API_URL + OG_COMPUTE_API_KEY (0G Compute direct)\n" +
+      "  • OG_COMPUTE_PROVIDER_ADDRESS (0G Compute broker — needs mainnet OG)\n" +
+      "  • GROQ_API_KEY (emergency fallback from console.groq.com)"
+    );
+  }
+
+  const summary = attempts.map((a) => `${a.provider}: ${a.error}`).join(" | ");
+  throw new Error(`All inference providers failed. ${summary}`);
 }
 
 // ─── Setup helpers (broker only) ─────────────────────────────────────────────
