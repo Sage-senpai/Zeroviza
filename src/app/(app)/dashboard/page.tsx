@@ -167,7 +167,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="bg-[#1E293B] rounded-xl p-3">
                     <p className="text-[#64748B] text-xs mb-1">Network</p>
-                    <p className="text-white text-xs font-semibold">0G Galileo Testnet (16602)</p>
+                    <p className="text-white text-xs font-semibold">0G Aristotle Mainnet (16661)</p>
                   </div>
                 </div>
 

@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
       .map((m) => ({ role: m.role, content: m.content }));
 
     // 2. Run inference — this is the only blocking call the user waits for
-    const { content } = await sendToZeroViza(message, contextHistory);
+    const { content, providerAddress } = await sendToZeroViza(message, contextHistory);
 
     // 3. Create messages
     const userMsg: ChatMessage = {
@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
       role: "assistant",
       content,
       timestamp: Date.now(),
+      provider: providerAddress,
     };
 
     const updatedHistory = [...history, userMsg, assistantMsg];

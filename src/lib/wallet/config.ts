@@ -13,9 +13,9 @@ import {
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 
-// Re-export from chains.ts so other files can import ogGalileoTestnet from here
-export { ogGalileoTestnet } from "./chains";
-import { ogGalileoTestnet } from "./chains";
+// Re-export from chains.ts so other files can import chains from here
+export { ogAristotleMainnet, ogGalileoTestnet } from "./chains";
+import { ogAristotleMainnet } from "./chains";
 
 // ─── Wagmi + RainbowKit config ────────────────────────────────────────────────
 const walletConnectProjectId = (
@@ -51,10 +51,10 @@ export const wagmiConfig = getDefaultConfig({
   projectId: hasWalletConnectProjectId
     ? walletConnectProjectId
     : "00000000000000000000000000000000",
-  chains: [ogGalileoTestnet],
+  chains: [ogAristotleMainnet],
   wallets: walletGroups,
   transports: {
-    [ogGalileoTestnet.id]: http("https://evmrpc-testnet.0g.ai"),
+    [ogAristotleMainnet.id]: http("https://evmrpc.0g.ai"),
   },
   ssr: false,
   multiInjectedProviderDiscovery: true,

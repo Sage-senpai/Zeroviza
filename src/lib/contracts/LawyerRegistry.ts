@@ -59,7 +59,8 @@ function getServerContract(readOnly = false) {
   const contractAddress = getRegistryAddress();
   if (!contractAddress) throw new Error("NEXT_PUBLIC_LAWYER_REGISTRY_ADDRESS not set");
 
-  const provider = new ethers.JsonRpcProvider("https://evmrpc-testnet.0g.ai");
+  const rpc = process.env.NEXT_PUBLIC_0G_RPC_URL ?? "https://evmrpc.0g.ai";
+  const provider = new ethers.JsonRpcProvider(rpc);
 
   if (readOnly) {
     return new ethers.Contract(contractAddress, LAWYER_REGISTRY_ABI, provider);

@@ -107,7 +107,7 @@ export function Sidebar() {
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-[dot-pulse_2s_ease-in-out_infinite]" />
                 <span className="text-[#64748B] text-xs">
-                  {isDemo ? "Demo Mode" : "0G Galileo"}
+                  {isDemo ? "Demo Mode" : "0G Aristotle"}
                 </span>
               </div>
             </div>

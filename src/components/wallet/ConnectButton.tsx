@@ -2,7 +2,7 @@
 
 import { ConnectButton as RainbowConnectButton } from "@rainbow-me/rainbowkit";
 import { useSwitchChain } from "wagmi";
-import { ogGalileoTestnet } from "@/lib/wallet/config";
+import { ogAristotleMainnet } from "@/lib/wallet/config";
 
 export function ConnectButton() {
   const { switchChain, isPending: isSwitching } = useSwitchChain();
@@ -37,7 +37,7 @@ export function ConnectButton() {
               </button>
             ) : chain.unsupported ? (
               <button
-                onClick={() => switchChain({ chainId: ogGalileoTestnet.id })}
+                onClick={() => switchChain({ chainId: ogAristotleMainnet.id })}
                 disabled={isSwitching}
                 className="px-4 py-2 bg-[#DC2626] text-white text-sm font-semibold rounded-xl hover:bg-[#B91C1C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-red-200"
               >

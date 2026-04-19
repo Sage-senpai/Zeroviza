@@ -5,6 +5,8 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   timestamp: number; // Unix ms
+  /** Which inference provider served this response — for transparency + judge verification */
+  provider?: string; // "0g-compute-direct" | "0g-broker" | "groq-fallback" | on-chain provider address
 }
 
 export interface ChatSession {

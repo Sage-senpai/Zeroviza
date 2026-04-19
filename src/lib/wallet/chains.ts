@@ -6,9 +6,26 @@
 
 import { defineChain } from "viem";
 
+export const ogAristotleMainnet = defineChain({
+  id: 16661,
+  name: "0G Aristotle",
+  nativeCurrency: { name: "0G", symbol: "0G", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://evmrpc.0g.ai"] },
+  },
+  blockExplorers: {
+    default: {
+      name: "0G Scan",
+      url: "https://chainscan.0g.ai",
+    },
+  },
+  testnet: false,
+});
+
+// Keep testnet definition for local development / faucet testing
 export const ogGalileoTestnet = defineChain({
   id: 16602,
-  name: "0G-Galileo-Testnet",
+  name: "0G Galileo Testnet",
   nativeCurrency: { name: "0G", symbol: "0G", decimals: 18 },
   rpcUrls: {
     default: { http: ["https://evmrpc-testnet.0g.ai"] },

@@ -3,6 +3,32 @@
 import { motion } from "framer-motion";
 import type { ChatMessage } from "@/types/chat";
 
+function ProviderBadge({ provider }: { provider: string }) {
+  const is0G =
+    provider === "0g-compute-direct" ||
+    provider === "0g-broker" ||
+    provider.startsWith("0x");
+  const isGroq = provider === "groq-fallback";
+
+  if (is0G) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#DC2626] bg-[#FEF2F2] border border-[#FECACA] rounded-full px-1.5 py-0.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse" />
+        0G Compute
+      </span>
+    );
+  }
+  if (isGroq) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#64748B] bg-[#F1F5F9] border border-[#E2E8F0] rounded-full px-1.5 py-0.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#64748B]" />
+        Groq
+      </span>
+    );
+  }
+  return null;
+}
+
 interface ChatBubbleProps {
   message: ChatMessage;
   index: number;
@@ -37,18 +63,19 @@ export function ChatBubble({ message, index }: ChatBubbleProps) {
         >
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
-        <p
-          className={`text-[10px] mt-1 ${
-            isUser ? "text-[#94A3B8] text-right" : "text-[#94A3B8]"
-          }`}
-        >
-          {message.timestamp
-            ? new Date(message.timestamp).toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : ""}
-        </p>
+        <div className={`flex items-center gap-2 mt-1 ${isUser ? "justify-end" : "justify-start"}`}>
+          {!isUser && message.provider && (
+            <ProviderBadge provider={message.provider} />
+          )}
+          <p className="text-[10px] text-[#94A3B8]">
+            {message.timestamp
+              ? new Date(message.timestamp).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : ""}
+          </p>
+        </div>
       </div>
     </motion.div>
   );

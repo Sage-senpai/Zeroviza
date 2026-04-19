@@ -49,7 +49,8 @@ function getContract(readOnly = false) {
   const addr = getStorageIndexAddress();
   if (!addr) throw new Error("NEXT_PUBLIC_STORAGE_INDEX_ADDRESS not set");
 
-  const provider = new ethers.JsonRpcProvider("https://evmrpc-testnet.0g.ai");
+  const rpc = process.env.NEXT_PUBLIC_0G_RPC_URL ?? "https://evmrpc.0g.ai";
+  const provider = new ethers.JsonRpcProvider(rpc);
 
   if (readOnly) {
     return new ethers.Contract(addr, STORAGE_INDEX_ABI, provider);
