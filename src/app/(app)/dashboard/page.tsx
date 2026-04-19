@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useHistory } from "@/hooks/useHistory";
 import { ActivityGraph } from "@/components/home/ActivityGraph";
 import { LoadingDots } from "@/components/ui/LoadingDots";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface StatConfig {
   label: string;
@@ -51,13 +52,22 @@ function StatCard({ label, value, icon, color, bgColor, borderColor, delay, tool
 
 export default function DashboardPage() {
   const { address } = useWallet();
-  const { data: profileData, isLoading: profileLoading } = useProfile();
-  const { data: messages, isLoading: historyLoading } = useHistory(500);
+  const queryClient = useQueryClient();
+  const { data: profileData, isLoading: profileLoading, refetch: refetchProfile } = useProfile();
+  const { data: messages, isLoading: historyLoading, refetch: refetchHistory } = useHistory(500);
 
   const totalMessages = messages?.length ?? 0;
   const userMessages = messages?.filter((m) => m.role === "user").length ?? 0;
   const streak = profileData?.streak.current ?? 0;
   const isLoading = profileLoading || historyLoading;
+  const hasActivity = totalMessages > 0;
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["history", address] });
+    queryClient.invalidateQueries({ queryKey: ["profile", address] });
+    refetchProfile();
+    refetchHistory();
+  };
 
   const STATS: StatConfig[] = [
     {
@@ -116,7 +126,19 @@ export default function DashboardPage() {
           <h1 className="text-[#0F172A] font-black text-xl">Case Dashboard</h1>
           <p className="text-[#64748B] text-sm mt-0.5">Your immigration activity and progress</p>
         </div>
-        <ConnectButton />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            title="Refresh stats"
+            className="w-9 h-9 rounded-xl border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:border-[#DC2626] hover:text-[#DC2626] transition-all disabled:opacity-40"
+          >
+            <svg className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+          <ConnectButton />
+        </div>
       </motion.header>
 
       {/* ── Content ────────────────────────────────────────────────────── */}
@@ -133,6 +155,28 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {STATS.map((stat) => <StatCard key={stat.label} {...stat} />)}
             </div>
+
+            {/* First-time nudge */}
+            {!hasActivity && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-[#FEF2F2] border border-[#FECACA] rounded-2xl p-4 flex items-center gap-3"
+              >
+                <div className="w-9 h-9 rounded-xl bg-[#DC2626] flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[#0F172A] font-bold text-sm">No sessions yet</p>
+                  <p className="text-[#64748B] text-xs mt-0.5">Ask your first question to start tracking your streak and activity.</p>
+                </div>
+                <Link href="/chat" className="px-3 py-1.5 bg-[#DC2626] text-white text-xs font-semibold rounded-lg hover:bg-[#B91C1C] transition-colors flex-shrink-0">
+                  Start
+                </Link>
+              </motion.div>
+            )}
 
             {/* Activity */}
             <ActivityGraph />

@@ -126,7 +126,7 @@ export function ChatInput({ onSend, isLoading, disabled }: ChatInputProps) {
       </div>
 
       <p className="text-[#94A3B8] text-[10px] text-center mt-2">
-        AI guidance only — not legal advice. Press Enter to send, Shift+Enter for new line.
+        AI guidance only — Not Legal Advice · Press Enter to send · Shift+Enter for new line
       </p>
     </div>
   );

@@ -44,13 +44,17 @@ export function useChat() {
         const data = (await res.json()) as ChatResponse;
         addMessage(data.message);
 
-        // Invalidate history + profile caches after successful chat.
-        // Profile is invalidated with a short delay so the background
-        // persist to 0G Storage has time to complete the streak update.
+        // Invalidate history immediately (returns updated list from 0G)
         await queryClient.invalidateQueries({ queryKey: ["history", address] });
+        // Profile streak is written by background persist — 0G chain tx
+        // takes ~10-20s to confirm. Invalidate at 15s and again at 35s
+        // to catch both fast and slow confirmations.
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ["profile", address] });
-        }, 3000);
+        }, 15_000);
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["profile", address] });
+        }, 35_000);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong";
         setError(msg);

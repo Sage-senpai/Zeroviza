@@ -96,7 +96,7 @@ export default function ChatPage() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
-              <span className="text-[#64748B] text-xs">Online · 0G Compute · Not legal advice</span>
+              <span className="text-[#64748B] text-xs">Online · 0G Compute · Not Legal Advice</span>
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function ChatPage() {
         </div>
 
         <p className="text-[#94A3B8] text-[10px] text-center mt-2">
-          AI guidance only — not legal advice. Press Enter to send, Shift+Enter for new line.
+          AI guidance only — Not Legal Advice · Press Enter to send · Shift+Enter for new line
         </p>
       </div>
     </div>
